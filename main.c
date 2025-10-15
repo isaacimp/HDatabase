@@ -20,6 +20,13 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     }
     SDL_SetRenderLogicalPresentation(renderer, 640, 480, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
+    /*
+     * init SDL_ttf for text rendering
+     * Load fonts
+     * initialize http client librarys for api fetchs
+     * Initial data fetch and load
+     */
+
     return SDL_APP_CONTINUE;
 }
 
@@ -28,6 +35,13 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event)
     if (event->type == SDL_EVENT_QUIT) {
         return SDL_APP_SUCCESS;
     }
+
+    /*
+     * Mouse clicks
+     * Mouse hover
+     * Keyboard Shortcuts
+     * Window resizing
+     */
     return SDL_APP_CONTINUE;
 }
 
@@ -43,10 +57,20 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 
     SDL_RenderPresent(renderer);
 
+    /*
+     * Refresh data
+     * update animations
+     * render UI
+     */
+
     return SDL_APP_CONTINUE;
 }
 
 void SDL_AppQuit(void *appstate, SDL_AppResult result)
 {
-    /* SDL will clean up the window/renderer for us. */
+    /*
+     * Save current
+     * close connections
+     * free fonts textures etc
+     */
 }

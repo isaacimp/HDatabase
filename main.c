@@ -13,20 +13,28 @@ int main(int argc, char *argv[])
 
     bool running = true;
 
-    SDL_SetAppMetadata("Health Dashboard", "1.0", "https://isaacmp.xyz");
+    SDL_SetAppMetadata("Life in Data", "1.0", "https://isaacmp.xyz");
 
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_Log("Couldn't init SDL: %s", SDL_GetError());
         return 1;
     }
 
-    if (!SDL_CreateWindowAndRenderer("Health Dashboard", 640, 480, SDL_WINDOW_RESIZABLE, &window, &renderer)) {
+    if (!SDL_CreateWindowAndRenderer("Life in Data", 1920, 1080, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY, &window, &renderer)) {
         SDL_Log("Couldn't create window/renderer: %s", SDL_GetError());
         SDL_Quit();
         return 1;
     }
-    SDL_SetRenderLogicalPresentation(renderer, 640, 480, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
+    /* Get actual render output size and calculate DPI scale */
+    int render_width, render_height;
+    int window_width, window_height;
+    SDL_GetRenderOutputSize(renderer, &render_width, &render_height);
+    SDL_GetWindowSize(window, &window_width, &window_height);
+    float dpi_scale = (float)render_width / (float)window_width;
+    SDL_Log("Window: %dx%d, Render: %dx%d, DPI Scale: %.2f",
+            window_width, window_height, render_width, render_height, dpi_scale);
+/*
     surface = SDL_LoadBMP("sample.bmp");
     if (surface) {
         texture = SDL_CreateTextureFromSurface(renderer, surface);
@@ -37,7 +45,7 @@ int main(int argc, char *argv[])
     } else {
         SDL_Log("Note: sample.bmp not found, continuing without it");
     }
-
+*/
     if (!TTF_Init()) {
         SDL_Log("Couldn't init SDL_ttf: %s", SDL_GetError());
         SDL_DestroyRenderer(renderer);
@@ -46,7 +54,11 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    font = TTF_OpenFont("/System/Library/Fonts/Supplemental/Arial.ttf", 48);
+    /* Scale font size based on DPI (18pt base size) */
+    int base_font_size = 18;
+    int scaled_font_size = (int)(base_font_size * dpi_scale);
+    font = TTF_OpenFont("/System/Library/Fonts/Supplemental/Arial.ttf", scaled_font_size);
+    SDL_Log("Using font size: %d (base: %d, scale: %.2f)", scaled_font_size, base_font_size, dpi_scale);
     if (!font) {
         SDL_Log("Couldn't load font: %s", SDL_GetError());
         TTF_Quit();
@@ -57,9 +69,9 @@ int main(int argc, char *argv[])
     }
 
     /* Render text to texture */
-    SDL_Color white = {255, 255, 255, 255};
-    const char *text = "Health Dashboard";
-    surface = TTF_RenderText_Solid(font, text, 0, white);
+    SDL_Color black = {0, 0, 0, 255};
+    const char *text = "Welcome Isaac, to your Life in Data!";
+    surface = TTF_RenderText_Blended(font, text, 0, black);
     if (surface) {
         text_texture = SDL_CreateTextureFromSurface(renderer, surface);
         SDL_DestroySurface(surface);
@@ -92,27 +104,22 @@ int main(int argc, char *argv[])
         }
 
         /* Update and render */
-        const double now = ((double)SDL_GetTicks()) / 1000.0;
-        const float red = (float) (0.5 + 0.5 * SDL_sin(now));
-        const float green = (float) (0.5 + 0.5 * SDL_sin(now + SDL_PI_D * 2 / 3));
-        const float blue = (float) (0.5 + 0.5 * SDL_sin(now + SDL_PI_D * 4 / 3));
-        SDL_SetRenderDrawColorFloat(renderer, red, green, blue, SDL_ALPHA_OPAQUE_FLOAT);
-
+        SDL_SetRenderDrawColorFloat(renderer, 1.0f, 1.0f, 1.0f, 1.0f);  /* White background */
         SDL_RenderClear(renderer);
 
         if (texture) {
             SDL_RenderTexture(renderer, texture, NULL, NULL);
         }
 
-        /* Render text centered at top */
+        /* Render text at top left */
         if (text_texture) {
             float text_width, text_height;
             SDL_GetTextureSize(text_texture, &text_width, &text_height);
             SDL_FRect text_rect = {
-                (640 - text_width) / 2,  /* center horizontally */
-                20,                       /* 20 pixels from top */
-                text_width,
-                text_height
+                20,          /* 20 pixels from left */
+                20,          /* 20 pixels from top */
+                text_width,  /* exact texture width */
+                text_height  /* exact texture height */
             };
             SDL_RenderTexture(renderer, text_texture, NULL, &text_rect);
         }

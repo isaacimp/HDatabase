@@ -2,6 +2,67 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include <stdbool.h>
 
+/* Function to render a pre-made text texture at a specific position
+ * Use this for static text that doesn't change
+ * Parameters:
+ *   renderer - the SDL renderer to draw with
+ *   text_texture - the pre-rendered text texture
+ *   x, y - position to draw the text
+ */
+void render_text_texture(SDL_Renderer *renderer, SDL_Texture *text_texture, float x, float y) {
+    if (!text_texture) {
+        return;  /* Nothing to render */
+    }
+
+    float text_width, text_height;
+    SDL_GetTextureSize(text_texture, &text_width, &text_height);
+
+    SDL_FRect text_rect = {
+        x,           /* x position */
+        y,           /* y position */
+        text_width,  /* exact texture width */
+        text_height  /* exact texture height */
+    };
+
+    SDL_RenderTexture(renderer, text_texture, NULL, &text_rect);
+}
+
+/* Function to render text directly from a string
+ * Use this for dynamic text that changes (numbers, time, etc.)
+ * WARNING: Creates/destroys texture every call - slower but flexible
+ * Parameters:
+ *   renderer - the SDL renderer
+ *   font - the font to use
+ *   text - the string to render
+ *   color - text color
+ *   x, y - position to draw
+ */
+void render_text_string(SDL_Renderer *renderer, TTF_Font *font, const char *text, SDL_Color color, float x, float y) {
+    if (!text || !font) {
+        return;
+    }
+
+    SDL_Surface *surface = TTF_RenderText_Blended(font, text, 0, color);
+    if (!surface) {
+        return;
+    }
+
+    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_DestroySurface(surface);
+
+    if (!texture) {
+        return;
+    }
+
+    float text_width, text_height;
+    SDL_GetTextureSize(texture, &text_width, &text_height);
+
+    SDL_FRect text_rect = {x, y, text_width, text_height};
+    SDL_RenderTexture(renderer, texture, NULL, &text_rect);
+
+    SDL_DestroyTexture(texture);  /* Clean up texture immediately */
+}
+
 int main(int argc, char *argv[])
 {
     SDL_Window *window = NULL;
@@ -13,7 +74,7 @@ int main(int argc, char *argv[])
 
     bool running = true;
 
-    SDL_SetAppMetadata("Life in Data", "1.0", "https://isaacmp.xyz");
+    SDL_SetAppMetadata("Life in Data", "1.0", "com.at1a.lifeindata");
 
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_Log("Couldn't init SDL: %s", SDL_GetError());
@@ -111,18 +172,13 @@ int main(int argc, char *argv[])
             SDL_RenderTexture(renderer, texture, NULL, NULL);
         }
 
-        /* Render text at top left */
-        if (text_texture) {
-            float text_width, text_height;
-            SDL_GetTextureSize(text_texture, &text_width, &text_height);
-            SDL_FRect text_rect = {
-                20,          /* 20 pixels from left */
-                20,          /* 20 pixels from top */
-                text_width,  /* exact texture width */
-                text_height  /* exact texture height */
-            };
-            SDL_RenderTexture(renderer, text_texture, NULL, &text_rect);
-        }
+        /* Render static text (pre-made texture) */
+        render_text_texture(renderer, text_texture, 20, 20);
+
+        /* Render dynamic text (created from string) */
+        SDL_Color black = {0, 0, 0, 255};
+        render_text_string(renderer, font, "Dynamic text example", black, 20, 100);
+        render_text_string(renderer, font, "Testing more text additions", black, 20, 180);
 
         /*
          * Refresh data
